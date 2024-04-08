@@ -7,7 +7,7 @@ macro_rules! detect_feature {
     };
     ($feature:tt, $feature_lit:tt : $($target_feature_lit:tt),*) => {
         $(cfg!(target_feature = $target_feature_lit) ||)*
-            $crate::detect::__is_feature_detected::$feature()
+            $crate::detect::check_for($crate::detect::Feature::$feature)
     };
 }
 
@@ -148,29 +148,6 @@ macro_rules! features {
                     _ => Err(())
                 }
             }
-        }
-
-        /// Each function performs run-time feature detection for a single
-        /// feature. This allow us to use stability attributes on a per feature
-        /// basis.
-        ///
-        /// PLEASE: do not use this, it is an implementation detail subject
-        /// to change.
-        #[doc(hidden)]
-        #[cfg($cfg)]
-        #[unstable(feature = "stdarch_internal", issue = "none")]
-        pub mod __is_feature_detected {
-            $(
-
-                /// PLEASE: do not use this, it is an implementation detail
-                /// subject to change.
-                #[inline]
-                #[doc(hidden)]
-                #[$stability_attr]
-                pub fn $feature() -> bool {
-                    $crate::detect::check_for($crate::detect::Feature::$feature)
-                }
-            )*
         }
     };
 }

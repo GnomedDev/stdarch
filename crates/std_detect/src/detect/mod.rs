@@ -24,15 +24,12 @@ mod macros;
 
 mod arch;
 
-// This module needs to be public because the `is_{arch}_feature_detected!`
-// macros expand calls to items within it in user crates.
-#[doc(hidden)]
 #[unstable(feature = "stdarch_internal", issue = "none")]
-pub use self::arch::__is_feature_detected;
+pub use self::arch::Feature;
 
-pub(crate) use self::arch::Feature;
-
+#[cfg(not(feature = "used_inside_core"))]
 mod bit;
+#[cfg(not(feature = "used_inside_core"))]
 mod cache;
 
 cfg_if! {
@@ -78,6 +75,7 @@ cfg_if! {
 /// Performs run-time feature detection.
 #[inline]
 #[unstable(feature = "stdarch_internal", issue = "none")]
+#[cfg(not(feature = "used_inside_core"))]
 pub fn check_for(x: Feature) -> bool {
     cache::test(x as u32)
 }
@@ -86,6 +84,7 @@ pub fn check_for(x: Feature) -> bool {
 /// `Item.0` is the feature name, and `Item.1` is a `bool` which
 /// is `true` if the feature is supported by the host and `false` otherwise.
 #[unstable(feature = "stdarch_internal", issue = "none")]
+#[cfg(not(feature = "used_inside_core"))]
 pub fn features() -> impl Iterator<Item = (&'static str, bool)> {
     cfg_if! {
         if #[cfg(any(
