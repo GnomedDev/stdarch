@@ -1,0 +1,5 @@
+{
+  "rust-analyzer.cargo.extraEnv": {
+    "TARGET": "x86_64-unknown-linux-gnu"
+  }
+}

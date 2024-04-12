@@ -6,8 +6,17 @@ macro_rules! detect_feature {
         $crate::detect_feature!($feature, $feature_lit : $feature_lit)
     };
     ($feature:tt, $feature_lit:tt : $($target_feature_lit:tt),*) => {
-        $(cfg!(target_feature = $target_feature_lit) ||)*
-            $crate::detect::__is_feature_detected::$feature()
+        $(cfg!(target_feature = $target_feature_lit) ||)* {
+            #[cfg(feature = "not-in-core")]
+            let enabled = $crate::detect::__is_feature_detected::$feature();
+
+            #[cfg(not(feature = "not-in-core"))]
+            let enabled = {
+                $crate::std_detect::__is_feature_detected::$feature()
+            };
+
+            enabled
+        }
     };
 }
 
@@ -123,7 +132,8 @@ macro_rules! features {
         #[repr(u8)]
         #[unstable(feature = "stdarch_internal", issue = "none")]
         #[cfg($cfg)]
-        pub(crate) enum Feature {
+        #[cfg(any(not(feature = "not-in-core"), not(feature = "rustc-dep-of-std")))]
+        pub enum Feature {
             $(
                 $(#[$feature_comment])*
                 $feature,
@@ -134,15 +144,16 @@ macro_rules! features {
         }
 
         #[cfg($cfg)]
+        #[cfg(any(not(feature = "not-in-core"), not(feature = "rustc-dep-of-std")))]
         impl Feature {
-            pub(crate) fn to_str(self) -> &'static str {
+            pub fn to_str(self) -> &'static str {
                 match self {
                     $(Feature::$feature => $feature_lit,)*
                     Feature::_last => unreachable!(),
                 }
             }
             #[cfg(feature = "std_detect_env_override")]
-            pub(crate) fn from_str(s: &str) -> Result<Feature, ()> {
+            pub fn from_str(s: &str) -> Result<Feature, ()> {
                 match s {
                     $($feature_lit => Ok(Feature::$feature),)*
                     _ => Err(())
@@ -168,7 +179,13 @@ macro_rules! features {
                 #[doc(hidden)]
                 #[$stability_attr]
                 pub fn $feature() -> bool {
-                    $crate::detect::check_for($crate::detect::Feature::$feature)
+                    #[cfg(feature = "not-in-core")]
+                    let enabled = $crate::detect::check_for($crate::detect::Feature::$feature);
+
+                    #[cfg(not(feature = "not-in-core"))]
+                    let enabled = $crate::arch::detect_cpu_feature(crate::std_detect::Feature::$feature);
+
+                    enabled
                 }
             )*
         }

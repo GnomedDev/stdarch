@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+#[cfg(feature = "not-in-core")]
 use cfg_if::cfg_if;
 
 // Export the macros for all supported architectures.
@@ -62,9 +63,9 @@ cfg_if! {
 
         impl Feature {
             #[doc(hidden)]
-            pub(crate) fn from_str(_s: &str) -> Result<Feature, ()> { Err(()) }
+            pub fn from_str(_s: &str) -> Result<Feature, ()> { Err(()) }
             #[doc(hidden)]
-            pub(crate) fn to_str(self) -> &'static str { "" }
+            pub fn to_str(self) -> &'static str { "" }
         }
     }
 }

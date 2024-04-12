@@ -16,7 +16,7 @@
 //! architectures do not allow user-space programs to query the feature bits
 //! due to security concerns (x86 is the big exception). These functions are
 //! implemented in the `os/{target_os}.rs` modules.
-
+#[cfg(feature = "not-in-core")]
 use cfg_if::cfg_if;
 
 #[macro_use]
@@ -30,11 +30,25 @@ mod arch;
 #[unstable(feature = "stdarch_internal", issue = "none")]
 pub use self::arch::__is_feature_detected;
 
-pub(crate) use self::arch::Feature;
+#[cfg(any(
+    // Compiling std and in core
+    all(not(feature = "not-in-core"), feature = "rustc-dep-of-std"),
+    // Compiling normally
+    not(feature = "rustc-dep-of-std")
+))]
+// Import normally
+pub use self::arch::Feature;
 
+// Compiling std and in std, import from core
+#[cfg(all(feature = "not-in-core", feature = "rustc-dep-of-std"))]
+pub use core::std_detect::Feature;
+
+#[cfg(feature = "not-in-core")]
 mod bit;
+#[cfg(feature = "not-in-core")]
 mod cache;
 
+#[cfg(feature = "not-in-core")]
 cfg_if! {
     if #[cfg(miri)] {
         // When running under miri all target-features that are not enabled at
@@ -78,6 +92,7 @@ cfg_if! {
 /// Performs run-time feature detection.
 #[inline]
 #[allow(dead_code)]
+#[cfg(feature = "not-in-core")]
 fn check_for(x: Feature) -> bool {
     cache::test(x as u32)
 }
@@ -85,6 +100,7 @@ fn check_for(x: Feature) -> bool {
 /// Returns an `Iterator<Item=(&'static str, bool)>` where
 /// `Item.0` is the feature name, and `Item.1` is a `bool` which
 /// is `true` if the feature is supported by the host and `false` otherwise.
+#[cfg(feature = "not-in-core")]
 #[unstable(feature = "stdarch_internal", issue = "none")]
 pub fn features() -> impl Iterator<Item = (&'static str, bool)> {
     cfg_if! {
